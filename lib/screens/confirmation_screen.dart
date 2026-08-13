@@ -44,9 +44,9 @@ class ConfirmationScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               'Appointment booked!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(

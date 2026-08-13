@@ -1,17 +1,21 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'router/app_router.dart';
 
-void main() {
+Future<void> main() async {
+  // Ensure Flutter bindings are ready before any async work.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase (reads google-services.json on Android).
+  await Firebase.initializeApp();
+
   runApp(
     // ProviderScope makes Riverpod state available to the whole app.
-    // On Day 3 this is where our appointment-booking state will live,
-    // and on Day 4 it will provide Firestore streams.
-    const ProviderScope(
-      child: TenaFinderApp(),
-    ),
+    // This is where our appointment-booking state and Firestore streams live.
+    const ProviderScope(child: TenaFinderApp()),
   );
 }
 

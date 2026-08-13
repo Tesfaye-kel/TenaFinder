@@ -10,11 +10,7 @@ class DoctorCard extends StatelessWidget {
   final Doctor doctor;
   final VoidCallback? onTap;
 
-  const DoctorCard({
-    super.key,
-    required this.doctor,
-    this.onTap,
-  });
+  const DoctorCard({super.key, required this.doctor, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +30,9 @@ class DoctorCard extends StatelessWidget {
               // Doctor avatar (falls back to initials icon if no photo)
               CircleAvatar(
                 radius: 28,
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 child: doctor.photoUrl.isEmpty
                     ? Text(
                         doctor.name.isNotEmpty

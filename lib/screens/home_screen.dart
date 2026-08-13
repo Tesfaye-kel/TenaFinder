@@ -1,51 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/facility.dart';
+import '../providers/firestore_providers.dart';
+import '../services/location_service.dart';
 import '../widgets/category_card.dart';
 import '../widgets/facility_card.dart';
 
-/// The Day 1 static Home screen.
+/// The Home screen (Day 5).
 ///
-/// No backend yet — the facilities list below is hardcoded test data.
-/// On Day 4 it will come from Firestore, and on Day 5 the distance will
-/// be calculated from the user's real GPS position.
-class HomeScreen extends StatelessWidget {
+/// Facilities come live from Firestore. Distances are calculated from the
+/// user's real GPS position (Haversine formula) instead of hardcoded values.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
-  // Hardcoded test data — replaced by Firestore on Day 4.
-  static const List<Facility> _facilities = [
-    Facility(
-      id: 'f1',
-      name: 'Addis General Hospital',
-      category: 'hospital',
-      rating: 4.6,
-      distanceKm: 1.2,
-      isOpen: true,
-      address: 'Bole Road, Addis Ababa',
-    ),
-    Facility(
-      id: 'f2',
-      name: 'Neighborhood Pharmacy',
-      category: 'pharmacy',
-      rating: 4.3,
-      distanceKm: 0.8,
-      isOpen: true,
-      address: 'Megenagna, Addis Ababa',
-    ),
-    Facility(
-      id: 'f3',
-      name: 'Central Diagnostic Lab',
-      category: 'lab',
-      rating: 4.1,
-      distanceKm: 2.4,
-      isOpen: false,
-      address: 'Kazanchis, Addis Ababa',
-    ),
-  ];
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final LocationService _locationService = LocationService();
+  Position? _userPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  /// Gets the user's GPS position once on app start.
+  Future<void> _getUserLocation() async {
+    final position = await _locationService.getCurrentPosition();
+    if (!mounted) return;
+    setState(() {
+      _userPosition = position;
+    });
+  }
+
+  /// Returns the distance to show on a facility card (live or fallback).
+  double _distanceFor(Facility facility) {
+    final user = _userPosition;
+    if (user != null) {
+      return LocationService.distanceKm(
+        user,
+        facility.latitude,
+        facility.longitude,
+      );
+    }
+    // Fallback to the stored Firestore distance if GPS unavailable.
+    return facility.distanceKm;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final facilitiesAsync = ref.watch(facilitiesStreamProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -60,7 +71,8 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () {
-              // TODO(Day 6): navigate to Profile screen after Auth is added.
+              // TODO: Navigate to the Profile screen once Authentication
+              // is implemented (Firebase Auth).
             },
           ),
         ],
@@ -153,11 +165,49 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          for (final facility in _facilities)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FacilityCard(facility: facility),
+
+          // Facilities from Firestore (loading / error / data states)
+          facilitiesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
             ),
+            error: (error, stack) => Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.cloud_off,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Could not load facilities',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            data: (facilities) => Column(
+              children: [
+                for (final facility in facilities)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: FacilityCard(
+                      facility: facility,
+                      // Override the distance with the live GPS value.
+                      displayDistanceKm: _distanceFor(facility),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );

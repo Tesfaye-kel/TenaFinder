@@ -15,7 +15,8 @@ A healthcare discovery mobile app built with Flutter. Find doctors, view their p
 - **Flutter** (mobile)
 - **Riverpod** — state management
 - **go_router** — navigation
-- **Firebase** (planned: Firestore + Authentication)
+- **Firebase** — Firestore (live data) + Authentication
+- **geolocator** — GPS location
 
 ## Getting Started
 
@@ -41,7 +42,7 @@ lib/
 - [x] Home screen UI
 - [x] Doctor directory + search
 - [x] Doctor profile + booking flow
-- [ ] Firebase integration (real data)
-- [ ] GPS location + map screen
+- [x] Firebase integration (real data)
+- [x] GPS location + live distances
+- [ ] Google Maps API key (map screen)
 - [ ] User authentication + real bookings
-- [ ] Release APK

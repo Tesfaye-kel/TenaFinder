@@ -11,10 +11,7 @@ import 'package:go_router/go_router.dart';
 class MainScreen extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
-  const MainScreen({
-    super.key,
-    required this.navigationShell,
-  });
+  const MainScreen({super.key, required this.navigationShell});
 
   void _onTabTapped(int index) {
     // goBranch switches the active tab while preserving the other

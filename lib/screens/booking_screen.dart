@@ -20,11 +20,7 @@ class BookingScreen extends ConsumerStatefulWidget {
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   // Hardcoded available days and time slots (Day 3).
   // On Day 6 these will come from the doctor's real availability.
-  static const List<String> _availableDays = [
-    'Monday',
-    'Wednesday',
-    'Friday',
-  ];
+  static const List<String> _availableDays = ['Monday', 'Wednesday', 'Friday'];
 
   static const List<String> _timeSlots = [
     '09:00',
@@ -64,8 +60,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             ),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor:
-                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
+                backgroundColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
                 child: Text(
                   doctor.name.isNotEmpty ? doctor.name[0].toUpperCase() : '?',
                   style: TextStyle(
@@ -86,9 +83,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           // Available days
           Text(
             'Select a day',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -110,9 +107,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
           // Time slots
           Text(
             'Select a time',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -136,8 +133,9 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             onPressed: canConfirm
                 ? () {
                     // Create the appointment and navigate to confirmation.
-                    final appointment =
-                        ref.read(bookingProvider.notifier).confirm();
+                    final appointment = ref
+                        .read(bookingProvider.notifier)
+                        .confirm();
                     context.push('/confirmation', extra: appointment);
                   }
                 : null,

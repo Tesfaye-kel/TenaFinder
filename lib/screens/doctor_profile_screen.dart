@@ -21,9 +21,7 @@ class DoctorProfileScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Doctor Profile'),
-      ),
+      appBar: AppBar(title: const Text('Doctor Profile')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -77,11 +75,7 @@ class DoctorProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Colors.amber,
-                        ),
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
                         const SizedBox(width: 2),
                         Text(
                           doctor.rating.toStringAsFixed(1),

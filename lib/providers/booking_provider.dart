@@ -27,11 +27,7 @@ class BookingState {
   final String? selectedDay;
   final String? selectedTime;
 
-  const BookingState({
-    this.doctor,
-    this.selectedDay,
-    this.selectedTime,
-  });
+  const BookingState({this.doctor, this.selectedDay, this.selectedTime});
 
   BookingState copyWith({
     Doctor? doctor,
@@ -90,7 +86,8 @@ class BookingNotifier extends StateNotifier<BookingState> {
 }
 
 /// The global provider for the booking state.
-final bookingProvider =
-    StateNotifierProvider<BookingNotifier, BookingState>((ref) {
+final bookingProvider = StateNotifierProvider<BookingNotifier, BookingState>((
+  ref,
+) {
   return BookingNotifier();
 });

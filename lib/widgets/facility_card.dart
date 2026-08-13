@@ -10,11 +10,13 @@ import '../models/facility.dart';
 class FacilityCard extends StatelessWidget {
   final Facility facility;
   final VoidCallback? onTap;
+  final double? displayDistanceKm;
 
   const FacilityCard({
     super.key,
     required this.facility,
     this.onTap,
+    this.displayDistanceKm,
   });
 
   /// Returns a matching icon + color for each facility category.
@@ -76,11 +78,7 @@ class FacilityCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.star,
-                          size: 16,
-                          color: Colors.amber,
-                        ),
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
                         const SizedBox(width: 2),
                         Text(
                           facility.rating.toStringAsFixed(1),
@@ -97,7 +95,9 @@ class FacilityCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '${facility.distanceKm.toStringAsFixed(1)} km',
+                          // Use the live GPS distance if provided,
+                          // otherwise fall back to the stored value.
+                          '${(displayDistanceKm ?? facility.distanceKm).toStringAsFixed(1)} km',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey.shade700,
@@ -124,7 +124,9 @@ class FacilityCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: facility.isOpen ? Colors.green.shade700 : Colors.red.shade700,
+                    color: facility.isOpen
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
                   ),
                 ),
               ),

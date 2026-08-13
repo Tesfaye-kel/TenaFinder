@@ -35,10 +35,7 @@ final GoRouter appRouter = GoRouter(
         // Home tab
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const HomeScreen(),
-            ),
+            GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
           ],
         ),
         // Map tab
