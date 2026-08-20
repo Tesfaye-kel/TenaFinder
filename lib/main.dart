@@ -9,8 +9,13 @@ Future<void> main() async {
   // Ensure Flutter bindings are ready before any async work.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (reads google-services.json on Android).
-  await Firebase.initializeApp();
+  // Firebase is configured by the platform files in android/app and ios/.
+  // Keep the shell launchable when those local files are not present yet.
+  try {
+    await Firebase.initializeApp();
+  } catch (error) {
+    debugPrint('Firebase is not configured: $error');
+  }
 
   runApp(
     // ProviderScope makes Riverpod state available to the whole app.
@@ -19,11 +24,11 @@ Future<void> main() async {
   );
 }
 
-class TenaFinderApp extends StatelessWidget {
+class TenaFinderApp extends ConsumerWidget {
   const TenaFinderApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF00A86B), // healthcare green
     );
@@ -32,7 +37,9 @@ class TenaFinderApp extends StatelessWidget {
       title: 'TenaFinder',
       debugShowCheckedModeBanner: false,
       // go_router handles all navigation (bottom tabs + future screens).
-      routerConfig: appRouter,
+      // The router is a Riverpod provider so its redirect callback can
+      // read auth state (isLoggedInProvider) correctly.
+      routerConfig: ref.watch(routerProvider),
       theme: ThemeData(
         colorScheme: colorScheme,
         scaffoldBackgroundColor: Colors.white,

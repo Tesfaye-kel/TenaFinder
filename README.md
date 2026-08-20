@@ -20,10 +20,28 @@ A healthcare discovery mobile app built with Flutter. Find doctors, view their p
 
 ## Getting Started
 
+Before the first Android run:
+
+1. Put your Firebase Android config at `android/app/google-services.json`.
+2. Enable Email/Password sign-in in Firebase Authentication.
+3. Create Firestore in the Firebase console and publish rules that allow your
+	signed-in users to read doctors/facilities and create their own appointments.
+4. Replace `YOUR_GOOGLE_MAPS_API_KEY` in
+	`android/app/src/main/AndroidManifest.xml` with a restricted Android Maps
+	SDK key.
+
 ```bash
 flutter pub get
 flutter run
 ```
+
+To make a demo APK:
+
+```bash
+flutter build apk --release
+```
+
+The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
 ## Project Structure
 
@@ -44,5 +62,5 @@ lib/
 - [x] Doctor profile + booking flow
 - [x] Firebase integration (real data)
 - [x] GPS location + live distances
-- [ ] Google Maps API key (map screen)
-- [ ] User authentication + real bookings
+- [x] Google Maps integration (requires your API key)
+- [x] User authentication + real bookings (requires Firebase console setup)

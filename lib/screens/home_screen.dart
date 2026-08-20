@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/facility.dart';
@@ -71,8 +72,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: const Icon(Icons.person_outline),
             tooltip: 'Profile',
             onPressed: () {
-              // TODO: Navigate to the Profile screen once Authentication
-              // is implemented (Firebase Auth).
+              // Navigate to the Profile tab (bottom nav).
+              context.go('/profile');
             },
           ),
         ],
@@ -158,7 +159,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // TODO(Day 5): open full map view / see-all list.
+                  // Navigate to the map screen with all facilities.
+                  context.go('/map');
                 },
                 child: const Text('See all'),
               ),

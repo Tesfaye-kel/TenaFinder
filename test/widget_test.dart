@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tenafinder/main.dart';
 import 'package:tenafinder/models/doctor.dart';
 import 'package:tenafinder/models/facility.dart';
+import 'package:tenafinder/providers/auth_provider.dart';
 import 'package:tenafinder/providers/firestore_providers.dart';
 
 /// Test data used to override the Firestore providers.
@@ -61,6 +62,8 @@ const _testFacilities = [
 Widget _buildTestApp() {
   return ProviderScope(
     overrides: [
+      // Override auth so the router redirect doesn't hit FirebaseAuth.
+      authStateProvider.overrideWith((ref) => Stream.value(null)),
       doctorsStreamProvider.overrideWith((ref) => Stream.value(_testDoctors)),
       facilitiesStreamProvider.overrideWith(
         (ref) => Stream.value(_testFacilities),
@@ -134,33 +137,20 @@ void main() {
     expect(find.text('ETB 1500'), findsOneWidget);
     expect(find.text('Book appointment'), findsOneWidget);
 
-    // Start booking.
+    // Start booking. Since the test user is logged out, the router
+    // redirect (Day 6) sends them to the Login screen first.
     await tester.tap(find.text('Book appointment'));
     await tester.pumpAndSettle();
 
-    // Booking screen: select a day and a time.
-    expect(find.text('Select a day'), findsOneWidget);
-    await tester.tap(find.text('Monday'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('09:00'));
-    await tester.pumpAndSettle();
+    // The auth guard redirects to Login before the booking flow.
+    // ("Login" appears in both the AppBar and the submit button.)
+    expect(find.text('Login'), findsWidgets);
+    expect(find.text('Welcome back to TenaFinder'), findsOneWidget);
 
-    // Confirm.
-    await tester.tap(find.text('Confirm booking'));
+    // The signup link opens the account creation screen.
+    await tester.tap(find.text('Sign up'));
     await tester.pumpAndSettle();
-
-    // Confirmation screen shows appointment details.
-    expect(find.text('Appointment booked!'), findsOneWidget);
-    expect(find.text('Dr. Abebe Kebede'), findsOneWidget);
-    expect(find.text('Monday'), findsOneWidget);
-    expect(find.text('09:00'), findsOneWidget);
-    expect(find.textContaining('APT-'), findsOneWidget);
-
-    // Tap "Done" to return to the Doctors tab. This also resets the
-    // router stack so the next test starts from a clean state.
-    await tester.tap(find.text('Done'));
-    await tester.pumpAndSettle();
-    expect(find.text('Find a Doctor'), findsOneWidget);
+    expect(find.text('Create Account'), findsOneWidget);
   });
 
   testWidgets('Doctor search filters the list', (tester) async {

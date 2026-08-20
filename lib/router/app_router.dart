@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/doctor.dart';
+import '../providers/auth_provider.dart';
 import '../providers/booking_provider.dart';
 import '../screens/booking_screen.dart';
 import '../screens/confirmation_screen.dart';
 import '../screens/doctor_directory_screen.dart';
 import '../screens/doctor_profile_screen.dart';
 import '../screens/home_screen.dart';
+import '../screens/login_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/map_screen.dart';
+import '../screens/signup_screen.dart';
 
 /// Central go_router configuration.
 ///
@@ -20,12 +24,33 @@ import '../screens/map_screen.dart';
 /// - `StatefulShellRoute.indexedStack` keeps the bottom nav bar visible on
 ///   every tab while preserving each tab's scroll/state.
 ///
-/// Day 3 routes:
-/// - `/doctor-profile` — Doctor Profile (doctor passed via `extra`)
-/// - `/booking` — day/time slot selection
-/// - `/confirmation` — appointment confirmation (Appointment via `extra`)
-final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+/// Day 6 routes:
+/// - `/login` — email/password login
+/// - `/signup` — create a new account
+/// - The `redirect` guards the booking flow: a logged-out user is sent to
+///   `/login` before they can book an appointment.
+///
+/// Why a Riverpod provider instead of a global?
+/// - The redirect callback needs to read `isLoggedInProvider`. A global
+///   `final GoRouter` is created before the `ProviderScope` exists, so
+///   `ProviderScope.containerOf(context)` would fail on first navigation.
+/// - Making it a provider ensures the router is created inside the
+///   ProviderScope, so it can read auth state correctly.
+final routerProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/',
+    // Redirect logic: if a logged-out user tries to access the booking flow,
+    // send them to the login screen first.
+    redirect: (context, state) {
+      final loggedIn = ref.read(isLoggedInProvider);
+      final isBookingRoute = state.matchedLocation == '/booking' ||
+          state.matchedLocation == '/confirmation';
+
+      if (!loggedIn && isBookingRoute) {
+        return '/login';
+      }
+      return null;
+    },
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -96,8 +121,19 @@ final GoRouter appRouter = GoRouter(
         return const FallbackScreen(message: 'Appointment not found');
       },
     ),
+    // Login (pushed on top of the shell)
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    // Signup (pushed on top of the shell)
+    GoRoute(
+      path: '/signup',
+      builder: (context, state) => const SignupScreen(),
+    ),
   ],
-);
+  );
+});
 
 /// Simple fallback shown when a route is opened without its required data.
 class FallbackScreen extends StatelessWidget {

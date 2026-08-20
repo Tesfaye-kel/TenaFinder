@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/appointments_provider.dart';
 import '../providers/booking_provider.dart';
 
-/// Booking screen (Day 3).
+/// Booking screen (Day 3 → Day 6).
 ///
 /// Shows the selected doctor, a list of available days (hardcoded:
 /// Monday, Wednesday, Friday) and time slots. The user picks a day and
-/// time, then taps "Confirm" to create an appointment and see the
-/// Confirmation screen.
+/// time, then taps "Confirm" to save the appointment to Firestore
+/// (linked to the logged-in user) and see the Confirmation screen.
 class BookingScreen extends ConsumerStatefulWidget {
   const BookingScreen({super.key});
 
@@ -19,7 +20,7 @@ class BookingScreen extends ConsumerStatefulWidget {
 
 class _BookingScreenState extends ConsumerState<BookingScreen> {
   // Hardcoded available days and time slots (Day 3).
-  // On Day 6 these will come from the doctor's real availability.
+  // Future: these will come from the doctor's real availability.
   static const List<String> _availableDays = ['Monday', 'Wednesday', 'Friday'];
 
   static const List<String> _timeSlots = [
@@ -29,6 +30,52 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
     '14:00',
     '15:30',
   ];
+
+  // True while we're saving to Firestore (shows a spinner on the button).
+  bool _saving = false;
+
+  /// Saves the confirmed booking to Firestore, then navigates to the
+  /// confirmation screen with the real appointment ID from the database.
+  Future<void> _confirmBooking() async {
+    final booking = ref.read(bookingProvider);
+    final doctor = booking.doctor;
+    final day = booking.selectedDay;
+    final time = booking.selectedTime;
+    if (doctor == null || day == null || time == null) return;
+
+    setState(() => _saving = true);
+
+    try {
+      // Write to the Firestore `appointments` collection, linked to the
+      // logged-in user's ID. Returns the new document ID.
+      final appointmentId = await saveAppointmentToFirestore(
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        day: day,
+        time: time,
+      );
+
+      if (!mounted) return;
+
+      // Build the local Appointment with the real Firestore ID so the
+      // confirmation screen can display it.
+      final appointment = Appointment(
+        id: appointmentId,
+        doctor: doctor,
+        day: day,
+        time: time,
+      );
+
+      context.push('/confirmation', extra: appointment);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save booking. Please try again.')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,15 +177,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
 
           // Confirm button
           FilledButton(
-            onPressed: canConfirm
-                ? () {
-                    // Create the appointment and navigate to confirmation.
-                    final appointment = ref
-                        .read(bookingProvider.notifier)
-                        .confirm();
-                    context.push('/confirmation', extra: appointment);
-                  }
-                : null,
+            onPressed: canConfirm && !_saving ? _confirmBooking : null,
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               textStyle: const TextStyle(
@@ -146,7 +185,13 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            child: const Text('Confirm booking'),
+            child: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Confirm booking'),
           ),
         ],
       ),
