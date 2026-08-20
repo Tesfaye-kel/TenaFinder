@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'providers/auth_provider.dart';
+import 'providers/firestore_providers.dart';
 import 'router/app_router.dart';
 
 Future<void> main() async {
@@ -11,16 +13,28 @@ Future<void> main() async {
 
   // Firebase is configured by the platform files in android/app and ios/.
   // Keep the shell launchable when those local files are not present yet.
+  var firebaseReady = true;
   try {
     await Firebase.initializeApp();
   } catch (error) {
+    firebaseReady = false;
     debugPrint('Firebase is not configured: $error');
   }
+
+  final overrides = firebaseReady
+      ? const <Override>[]
+      : <Override>[
+          authStateProvider.overrideWith((ref) => Stream.value(null)),
+          doctorsStreamProvider.overrideWith((ref) => Stream.value(const [])),
+          facilitiesStreamProvider.overrideWith(
+            (ref) => Stream.value(const []),
+          ),
+        ];
 
   runApp(
     // ProviderScope makes Riverpod state available to the whole app.
     // This is where our appointment-booking state and Firestore streams live.
-    const ProviderScope(child: TenaFinderApp()),
+    ProviderScope(overrides: overrides, child: const TenaFinderApp()),
   );
 }
 
