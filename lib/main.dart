@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/firestore_providers.dart';
 import 'router/app_router.dart';
@@ -15,7 +16,9 @@ Future<void> main() async {
   // Keep the shell launchable when those local files are not present yet.
   var firebaseReady = true;
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (error) {
     firebaseReady = false;
     debugPrint('Firebase is not configured: $error');

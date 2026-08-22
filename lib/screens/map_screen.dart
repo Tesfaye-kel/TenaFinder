@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -6,10 +7,6 @@ import '../models/facility.dart';
 import '../providers/firestore_providers.dart';
 import '../services/location_service.dart';
 
-/// Map screen (Day 5).
-///
-/// Shows the user's current location and pins for all facilities
-/// in Firestore. Uses google_maps_flutter + geolocator.
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
@@ -19,14 +16,11 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   final LocationService _locationService = LocationService();
-
-  // Map state
   GoogleMapController? _mapController;
   LatLng? _userLocation;
   bool _loadingLocation = true;
   String? _locationError;
 
-  // Default to Addis Ababa center while waiting for GPS.
   static const LatLng _defaultCenter = LatLng(9.0108, 38.7612);
 
   @override
@@ -35,7 +29,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     _getUserLocation();
   }
 
-  /// Gets the user's position, then adds a marker for them.
   Future<void> _getUserLocation() async {
     final position = await _locationService.getCurrentPosition();
     if (!mounted) return;
@@ -50,7 +43,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       }
     });
 
-    // Move the camera to the user's location if we have it.
     if (position != null) {
       _mapController?.animateCamera(
         CameraUpdate.newLatLngZoom(
@@ -61,11 +53,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  /// Builds markers for the user + all facilities from Firestore.
   Set<Marker> _buildMarkers(List<Facility> facilities) {
     final markers = <Marker>{};
-
-    // Blue dot for the user.
     if (_userLocation != null) {
       markers.add(
         Marker(
@@ -79,52 +68,46 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       );
     }
 
-    // Facility pins (red for hospitals, green for pharmacies, etc.).
-    for (final f in facilities) {
+    for (final facility in facilities) {
       markers.add(
         Marker(
-          markerId: MarkerId(f.id),
-          position: LatLng(f.latitude, f.longitude),
+          markerId: MarkerId(facility.id),
+          position: LatLng(facility.latitude, facility.longitude),
           infoWindow: InfoWindow(
-            title: f.name,
-            snippet: f.isOpen ? 'Open now' : 'Closed',
+            title: facility.name,
+            snippet: facility.isOpen ? 'Open now' : 'Closed',
           ),
         ),
       );
     }
-
     return markers;
   }
 
   @override
   Widget build(BuildContext context) {
     final facilitiesAsync = ref.watch(facilitiesStreamProvider);
+    if (kIsWeb) return _buildWebFallback(facilitiesAsync);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Nearby Facilities')),
       body: Stack(
         children: [
-          // The Google Map widget
           GoogleMap(
             initialCameraPosition: CameraPosition(
               target: _userLocation ?? _defaultCenter,
               zoom: 12,
             ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
+            onMapCreated: (controller) => _mapController = controller,
             markers: facilitiesAsync.maybeWhen(
-              data: (facilities) => _buildMarkers(facilities),
-              orElse: () =>
-                  _userLocation != null ? _buildMarkers([]) : <Marker>{},
+              data: _buildMarkers,
+              orElse: () => _userLocation != null
+                  ? _buildMarkers([])
+                  : <Marker>{},
             ),
             myLocationEnabled: true,
             myLocationButtonEnabled: true,
-            // ASK: why do we need these? See teaching note below.
             padding: const EdgeInsets.only(top: 8, bottom: 8),
           ),
-
-          // Loading overlay while getting GPS position.
           if (_loadingLocation)
             const Positioned.fill(
               child: ColoredBox(
@@ -132,8 +115,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
-
-          // Error message if location permission was denied.
           if (_locationError != null)
             Positioned(
               left: 16,
@@ -147,18 +128,43 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     children: [
                       const Icon(Icons.info_outline, color: Colors.orange),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _locationError!,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
+                      Expanded(child: Text(_locationError!)),
                     ],
                   ),
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWebFallback(AsyncValue<List<Facility>> facilitiesAsync) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Nearby Facilities')),
+      body: facilitiesAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(
+          child: Text('Unable to load facilities: $error'),
+        ),
+        data: (facilities) => facilities.isEmpty
+            ? const Center(child: Text('No facilities found.'))
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: facilities.length,
+                separatorBuilder: (_, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final facility = facilities[index];
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.location_on),
+                      title: Text(facility.name),
+                      subtitle: Text(facility.address),
+                      trailing: Text(facility.isOpen ? 'Open' : 'Closed'),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
