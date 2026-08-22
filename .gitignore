@@ -41,6 +41,7 @@ app.*.map.json
 
 # Firebase configuration (contains project-specific keys — keep local)
 **/google-services.json
+.firebase/
 
 # Android Studio will place build artifacts here
 /android/app/debug
